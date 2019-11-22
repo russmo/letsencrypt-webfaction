@@ -2,6 +2,15 @@ Unreleased
 
 * Your change here!
 
+v4.0.0
+
+* Uses ACMEv2 api with the version 2 gem client. ACMEv1 api has been deprecated and older versions of
+letsencrypt_webfaction fail as of November 2019.
+* Requires ruby v2.3 or greater, dropping support for 2.2.
+* New `--full_chain=true|false` per-certificate option argument to use single certificate file containing
+complete chain certificate bundle (when true [default]) or the site cert and extra chain bundle as separate files (when false) for installing with Webfaction api. Webfaction seems to handle the single full_chain format
+just fine, but certain setups might need them separate.
+
 v3.2.0
 
 * New `--force` argument for easier handling of `endpoint` switching. Fixes [#132](https://github.com/will-in-wi/letsencrypt-webfaction/issues/132)

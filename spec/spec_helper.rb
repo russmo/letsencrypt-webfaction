@@ -1,3 +1,5 @@
+require 'pathname'
+
 # Add lib to the require dir.
 $LOAD_PATH.unshift(File.dirname(__FILE__) + '/../lib')
 

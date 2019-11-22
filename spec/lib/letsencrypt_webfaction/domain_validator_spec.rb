@@ -1,5 +1,6 @@
 require 'acme/client'
 require 'letsencrypt_webfaction/domain_validator'
+require 'pathname'
 
 RSpec.describe LetsencryptWebfaction::DomainValidator do
   let(:domains) { ['example.com', 'www.example.com'] }
