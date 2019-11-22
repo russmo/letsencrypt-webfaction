@@ -11,7 +11,7 @@ module LetsencryptWebfaction
     def validate! # rubocop:disable Metrics/MethodLength
       write_files!
 
-      challenges.map(&:request_verification).tap do |requests|
+      challenges.map(&:request_validation).tap do |requests|
         next unless requests.any?(&:!)
 
         $stderr.puts 'Failed to request validations.'
@@ -22,6 +22,7 @@ module LetsencryptWebfaction
         break if no_challenges_pending?
 
         sleep(1)
+        challenges.map(&:reload)
       end
 
       return true if all_challenges_valid?
@@ -30,10 +31,14 @@ module LetsencryptWebfaction
       false
     end
 
+    def order
+      @order ||= @client.new_order(identifiers: @domains)
+    end
+
     private
 
     def authorizations
-      @authorizations ||= @domains.map { |domain| @client.authorize(domain: domain) }
+      @authorizations ||= order.authorizations
     end
 
     def challenges
@@ -41,11 +46,11 @@ module LetsencryptWebfaction
     end
 
     def no_challenges_pending?
-      challenges.none? { |challenge| challenge.authorization.verify_status == 'pending' }
+      challenges.none? { |challenge| challenge.status == 'pending' }
     end
 
     def all_challenges_valid?
-      challenges.reject { |challenge| challenge.authorization.verify_status == 'valid' }.empty?
+      challenges.reject { |challenge| challenge.status == 'valid' }.empty?
     end
 
     def write_files!
@@ -73,7 +78,7 @@ module LetsencryptWebfaction
       end
 
       def print_error # rubocop:disable Metrics/MethodLength
-        case @challenge.authorization.verify_status
+        case @challenge.status
         when 'valid'
           $stderr.puts "#{@domain}: Success"
         when 'invalid'
@@ -82,7 +87,7 @@ module LetsencryptWebfaction
         when 'pending'
           $stderr.puts "#{@domain}: Still pending, but timed out"
         else
-          $stderr.puts "#{@domain}: Unexpected authorization status #{@challenge.authorization.verify_status}"
+          $stderr.puts "#{@domain}: Unexpected authorization status #{@challenge.status}"
         end
       end
 

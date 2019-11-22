@@ -30,6 +30,11 @@ domains = [
 # Right now, only http01 is available. This is the default.
 #method = "http01"
 
+# If true (default) install single certificate file with bundled chain certificates, as returned
+# directedly from ACMEv2 client.  Webfaction appears to handle this just fine.
+# If false, install site certificate and extra chain bundle as separate files.
+full_chain = true
+
 # The path to the root of your website. Can be an array as in the second example.
 public = "~/webapps/myapp/public_html"
 # public = [

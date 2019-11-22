@@ -2,10 +2,12 @@ require 'xmlrpc/client'
 
 module LetsencryptWebfaction
   class CertificateInstaller
-    def initialize(cert_name, certificate, credentials)
+    def initialize(cert_name, certificate, csr_private_key, credentials, full_chain = true)
       @cert_name = cert_name
       @certificate = certificate
+      @csr_private_key = csr_private_key
       @credentials = credentials
+      @full_chain = full_chain
     end
 
     def install!
@@ -15,7 +17,17 @@ module LetsencryptWebfaction
                else
                  'create_certificate'
                end
-      @credentials.call(action, @cert_name, @certificate.to_pem, @certificate.request.private_key.to_pem, @certificate.chain_to_pem)
+      if @full_chain
+        # Install single cert file with entire chain appended, this is what 
+        # ACME v2 client returns directly.  It appears Webfaction can handle
+        # this full bundle cert just fine.
+        @credentials.call(action, @cert_name, @certificate, @csr_private_key.to_pem)
+      else
+        # 
+        cert = OpenSSL::X509::Certificate.new(@certificate).to_pem
+        extra_chain = @certificate.sub(cert, '')
+        @credentials.call(action, @cert_name, cert, @csr_private_key.to_pem, extra_chain)
+      end
 
       true
     end

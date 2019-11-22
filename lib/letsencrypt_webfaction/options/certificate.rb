@@ -19,6 +19,10 @@ module LetsencryptWebfaction
         @args['method'] || 'http01'
       end
 
+      def full_chain
+        @args['full_chain'] || true
+      end
+
       def public_dirs
         return [] if @args['public'].nil? || @args['public'] == ''
 

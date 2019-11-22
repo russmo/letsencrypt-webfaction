@@ -157,15 +157,15 @@ module LetsencryptWebfaction
       end
 
       def client
-        @_client ||= Acme::Client.new(private_key: private_key, endpoint: @options.endpoint)
+        @_client ||= Acme::Client.new(private_key: private_key, directory: @options.endpoint)
       end
 
       def register_key
         # If the private key is not known to the server, we need to register it for the first time.
-        registration = client.register(contact: "mailto:#{@options.letsencrypt_account_email}")
+        registration = client.new_account(contact: "mailto:#{@options.letsencrypt_account_email}", terms_of_service_agreed: true)
 
         # You'll may need to agree to the term (that's up the to the server to require it or not but boulder does by default)
-        registration.agree_terms
+        #registration.agree_terms
       rescue Acme::Client::Error::Malformed => e
         # Stupid hack if the registration already exists.
         return if e.message == 'Registration key is already in use'
