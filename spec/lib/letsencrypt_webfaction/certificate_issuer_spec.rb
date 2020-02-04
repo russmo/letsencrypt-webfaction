@@ -10,20 +10,27 @@ module LetsencryptWebfaction
         allow(creds).to receive(:call).and_return({}, nil)
       end
     end
-    let(:client) do
-      challenge = instance_double('Acme::Client::Resources::Challenges::HTTP01', request_verification: true)
-      authorization = instance_double('Acme::Client::Resources::Authorization', http01: challenge, verify_status: 'valid')
-      allow(challenge).to receive(:authorization).and_return(authorization)
-      cert = instance_double('::Acme::Client::Certificate', to_pem: 'CERT', chain_to_pem: 'CHAIN')
-      allow(cert).to receive_message_chain(:request, :private_key, :to_pem) { 'PRIVATE KEY' }
-      instance_double('Acme::Client', authorize: authorization, new_certificate: cert)
+    let(:challenge) { instance_double('Acme::Client::Resources::Challenges::HTTP01', request_validation: true, status: 'valid') }
+    let(:authorization) { instance_double('Acme::Client::Resources::Authorization', http01: challenge) }
+    let(:order) { instance_double(Acme::Client::Resources::Order, authorizations: [authorization]) }
+    let(:validator) { instance_double(LetsencryptWebfaction::DomainValidator, validate!: true) }
+    let(:installer) { instance_double(LetsencryptWebfaction::CertificateInstaller, install!: true) }
+    let(:client) { instance_double('Acme::Client', new_order: order) }
+    let(:myissuer) { instance_double(LetsencryptWebfaction::CertificateIssuer, validator: validator, certificate_installer: installer) }
+    
+
+    before :each do
+      allow(LetsencryptWebfaction::DomainValidator).to receive(:new) { validator }
+      allow(LetsencryptWebfaction::CertificateInstaller).to receive(:new) { installer }
     end
-    let(:issuer) { described_class.new(certificate: cert_config, api_credentials: api_credentials, client: client) }
+
 
     describe '#call' do
-      subject { issuer.call }
 
       it 'validates and installs' do
+        issuer = LetsencryptWebfaction::CertificateIssuer.new(certificate: cert_config, api_credentials: api_credentials, client: client)
+        subject { issuer.call }
+
         expect { subject }.to output(/Your new certificate is now created and installed/).to_stdout
       end
     end
